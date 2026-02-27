@@ -1,195 +1,94 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NexusV Empire</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusV Empire - Finance et Social</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --gold: #ffd700; --diamond: #00d1ff; --bg: #000; --red: #ff3b30; }
-        body, html { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: 'Helvetica Neue', sans-serif; overflow: hidden; height: 100%; }
-
-        /* 1. SPLASH SCREEN (LOGO V LUMINEUX) */
-        #splash {
-            position: fixed; inset: 0; background: #000; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.8s ease-in-out;
-        }
-        .grand-v {
-            font-size: 140px; font-weight: 900; color: var(--gold);
-            text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-            animation: pulse 2s infinite alternate; font-family: 'Times New Roman', serif;
-        }
-        @keyframes pulse { from { transform: scale(1); filter: brightness(1); } to { transform: scale(1.05); filter: brightness(1.4); } }
-
-        /* 2. INTERFACE TIKTOK & SOLDE */
-        .header { position: fixed; top: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-sizing: border-box; }
-        .wallet-badge { background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 20px; color: var(--gold); font-weight: bold; cursor: pointer; backdrop-filter: blur(10px); }
+        corps { marge: 0; arrière-plan: #000; couleur: blanc; police: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; affichage: flex; direction-flex: colonne; alignement-éléments: centre; marge intérieure: 15px; }
         
-        .feed { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; }
-        .video-card { height: 100vh; width: 100%; scroll-snap-align: start; position: relative; background: #000; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-
-        /* 3. ACTIONS LATÉRALES */
-        .side-actions { position: absolute; right: 15px; bottom: 120px; display: flex; flex-direction: column; gap: 25px; align-items: center; }
-        .icon { font-size: 30px; cursor: pointer; text-shadow: 0 2px 10px rgba(0,0,0,0.8); transition: 0.2s; }
-        .icon:active { transform: scale(1.3); }
-
-        /* 4. SYSTÈME DE MODALS */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000; padding: 25px; box-sizing: border-box; overflow-y: auto; }
-        .btn-gold { background: var(--gold); color: #000; border: none; padding: 15px; width: 100%; font-weight: bold; border-radius: 12px; cursor: pointer; margin: 15px 0; font-size: 16px; }
-        .btn-close { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 24px; background: none; border: none; }
-        input, select, textarea { width: 100%; padding: 14px; margin: 10px 0; background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; }
-
-        /* 5. BAN & SÉCURITÉ */
-        #ban-screen { display: none; position: fixed; inset: 0; background: #000; z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        /* Logo */
+        .grand-v { font-size: 70px; font-weight: 900; color: #ffd700; text-shadow: 0 0 20px #ffd700; margin: 10px 0; cursor: pointer; }
+        /*Portefeuille*/
+        .wallet-card { background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%); color: black; padding: 20px; border-radius: 20px; width: 95%; max-width: 450px; text-align: center; box-shadow: 0 10px 20px rgba(255, 215, 0, 0.2); margin-bottom: 20px; }
+        .balance-label { font-size: 14px; font-weight: bold; text-transform: uppercase; opacity: 0.8; }
+        .balance-amount { font-size: 32px; font-weight: 900; margin: 5px 0; }
+        .wallet-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-wallet { flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; background: rgba(0,0,0,0.8); color: white; transition: 0.3s; }
+        .btn-wallet:hover { background: white; color: black; }
+        /* Formulaire et messages */
+        .card { background: #111; padding: 20px; border-radius: 15px; border: 1px solid #333; width: 95%; max-width: 450px; margin-bottom: 20px; box-sizing: border-box; }
+        h3 { couleur : #ffd700 ; marge supérieure : 0 ; alignement du texte : centré ; taille de police : 18px ; }
+        input, .btn-main { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: none; box-sizing: border-box; font-size: 16px; }
+        input { background: #222; color: white; border: 1px solid #444; }
+        .btn-main { background: #ffd700; color: black; font-weight: bold; cursor: pointer; }
         
-        .nav-bar { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 20px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); pointer-events: auto; }
+        .post-display { background: #151515; padding: 15px; border-radius: 12px; margin-top: 15px; border-left: 5px solid #ffd700; width: 100%; box-sizing: border-box; }
+        .post-content { font-size: 17px; margin-bottom: 10px; line-height: 1.4; }
+        vidéo { largeur : 100 % ; bordure arrondie : 8 px ; arrière-plan : #000 ; marge supérieure : 5 px ; }
     </style>
 </head>
-<body>
-
-    <div id="splash">
-        <div class="grand-v" id="main-logo">V</div>
-        <div style="letter-spacing: 10px; font-weight: bold; opacity: 0.7;">NEXUSV</div>
-    </div>
-
-    <div id="ban-screen">
-        <h1 style="color: var(--red);">COMPTE BANNI</h1>
-        <p id="ban-msg">Contenu interdit détecté.</p>
-        <p>Récupération de compte :</p>
-        <h2 id="ban-price" style="color: var(--gold);">200 €</h2>
-        <button class="btn-gold" onclick="window.location.href='LIEN_STRIPE_AMENDE'">PAYER POUR RÉACTIVER</button>
-    </div>
-
-    <div class="header">
-        <div style="font-weight: 900; font-size: 22px; color: var(--gold); font-style: italic;">NEXUSV</div>
-        <div class="wallet-badge" onclick="toggleModal('wallet-modal')">
-            🪙 <span id="user-balance">0.00</span> €
+<corps>
+    <div class="grand-v" onclick="location.reload()">V</div>
+    <div class="carte-portefeuille">
+        <div class="balance-label">Mon Solde NexusV</div>
+        <div class="balance-amount" id="user-balance">0.00 FCFA</div>
+        <div class="wallet-btns">
+            <button class="btn-wallet" onclick="actionFinance('Dépôt')">+ Dépôt</button>
+            <button class="btn-wallet" onclick="actionFinance('Retrait')">- Retrait</button>
         </div>
     </div>
-
-    <div class="feed" id="video-feed">
-        </div>
-
-    <div class="nav-bar">
-        <span class="icon" onclick="location.reload()">🏠</span>
-        <span class="icon" onclick="toggleModal('upload-modal')">➕</span>
-        <span class="icon" onclick="toggleModal('nexus-contact')">💬</span>
-        <span class="icon" onclick="checkAdminAccess()">👑</span>
+    <div class="card">
+        <h3>Nouvelle publication</h3>
+        <input type="text" id="post-content" placeholder="Que voulez-vous dire ?">
+        <input type="text" id="video-url" placeholder="Lien vidéo direct (mp4, etc.)">
+        <button class="btn-main" onclick="sendPost()">PUBLIER DANS L'EMPIRE</button>
     </div>
-
-    <div id="wallet-modal" class="modal">
-        <button class="btn-close" onclick="toggleModal('wallet-modal')">✕</button>
-        <h2 style="color: var(--gold);">Portefeuille NexusV</h2>
-        <p>Solde monétisable : <span id="modal-balance" style="font-size: 24px;">0.00</span> €</p>
-        <hr style="border: 0.5px solid #222;">
-        <h3>Retrait Mobile Money (IA 5s)</h3>
-        <select id="w-method">
-            <option value="wave">Wave 🌊</option>
-            <option value="orange">Orange Money 🟧</option>
-            <option value="mtn">MTN MoMo 🟨</option>
-            <option value="moov">Moov Money 🟦</option>
-        </select>
-        <input type="number" id="w-amount" placeholder="Montant">
-        <input type="text" id="w-phone" placeholder="Numéro de compte">
-        <button class="btn-gold" onclick="processWithdrawal()">VALIDER LE RETRAIT</button>
-    </div>
-
-    <div id="upload-modal" class="modal">
-        <button class="btn-close" onclick="toggleModal('upload-modal')">✕</button>
-        <h2>Publier sur l'Empire</h2>
-        <input type="file" id="v-file" accept="video/*,audio/*,image/*">
-        <textarea id="v-desc" placeholder="Décrivez votre publication..."></textarea>
-        <button class="btn-gold" onclick="handleUpload()">ANALYSER & PUBLIER</button>
-    </div>
-
+    <div id="feed" style="width: 100%; max-width: 450px;"></div>
     <script>
-        // --- 🔴 CONFIGURATION SUPABASE (REMPLACE ICI) ---
-        const= "TA_URL_SUPABASE";
-(https://drrwmuzocggrhtvshpdg...)        const  = "TA_CLE_ANON";
+        // Configuration Ta Supabase
+        const SB_URL = "https://drrwmuzocggrhtvshpdg.supabase.co";
+        const SB_KEY = "Sb_publishable__c1nOqAjS87Km-nWtjEkRg_UnMTWTdZ";
         const supabase = supabase.createClient(SB_URL, SB_KEY);
-
-        let userProfile = null;
-
-        window.onload = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            if (user) {
-                const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-                userProfile = profile;
-
-                // 1. Logo intelligent (Or ou Diamant)
-                if(profile.is_certified || profile.is_monetized) {
-                    document.getElementById('main-logo').style.color = "#00d1ff";
-                    document.getElementById('main-logo').style.textShadow = "0 0 30px #00d1ff";
-                }
-
-                // 2. Vérification Bannissement
-                if(profile.is_banned) {
-                    document.getElementById('ban-screen').style.display = 'flex';
-                    document.getElementById('ban-price').innerText = profile.followers_count >= 2000000 ? "1000 €" : "200 €";
-                }
-
-                document.getElementById('user-balance').innerText = profile.wallet_balance.toFixed(2);
-                document.getElementById('modal-balance').innerText = profile.wallet_balance.toFixed(2);
-            }
-
-            // Splash timeout
-            setTimeout(() => {
-                document.getElementById('splash').style.opacity = '0';
-                setTimeout(() => document.getElementById('splash').style.display = 'none', 800);
-            }, 3000);
-
-            loadFeed();
-        };
-
-        async function loadFeed() {
-            const { data: videos } = await supabase.from('videos').select('*, profiles(username, is_certified)').order('created_at', {ascending:false});
-            const feed = document.getElementById('video-feed');
-            feed.innerHTML = videos.map(v => `
-                <div class="video-card">
-                    <video src="${v.video_url}" loop playsinline onclick="this.play()"></video>
-                    <div class="side-actions">
-                        <span class="icon" onclick="alert('Like ❤️')">❤️</span>
-                        <span class="icon" onclick="alert('Cadeau 🎁 (Com: 60%)')">🎁</span>
-                        <span class="icon" onclick="reportVideo('${v.id}')">🚩</span>
-                    </div>
-                    <div style="position:absolute; bottom:110px; left:20px; text-shadow: 0 2px 10px #000;">
-                        <b>@${v.profiles.username} ${v.profiles.is_certified ? '✔️' : ''}</b>
-                        <p>${v.description}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function processWithdrawal() {
-            const amt = document.getElementById('w-amount').value;
-            alert("IA NexusV : Analyse de sécurité en cours... (5s)");
-            setTimeout(() => {
-                alert(`✅ Retrait de ${amt}€ validé par l'IA vers votre compte.`);
-                toggleModal('wallet-modal');
-            }, 5000);
-        }
-
-        function toggleModal(id) {
-            const m = document.getElementById(id);
-            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
-        }
-
-        async function checkAdminAccess() {
-            if(userProfile && userProfile.username === 'YOUSSEF_ADMIN') {
-                alert("Bienvenue Maître.");
-                // Ouvrir panel admin ici
-            } else {
-                alert("Réservé au créateur de NexusV.");
+        // --- GESTION SOCIALE ---
+        fonction asynchrone chargerPosts() {
+            const { data, error } = await supabase.from('Post').select('*').order('created_at', { ascending: false });
+            const feed = document.getElementById('feed');
+            si (données) {
+                feed.innerHTML = "";
+                data.forEach(post => {
+                    feed.innerHTML += `
+                        <div class="post-display">
+                            <div class="post-content">${post.content}</div>
+                            ${post.video_url ? `<video controls src="${post.video_url}"></video>` : ''}
+                        </div>`;
+                });
             }
         }
-
-        async function reportVideo(id) {
-            const r = confirm("Signaler cette vidéo pour contenu inapproprié ?");
-            if(r) alert("Signalement envoyé à Youssef pour examen.");
+        fonction asynchrone sendPost() {
+            const content = document.getElementById('post-content').value;
+            const video = document.getElementById('video-url').value;
+            if (!content) return alert("Écris un message !");
+            const { erreur } = await supabase.from('Post').insert([{ contenu, video_url: vidéo }]);
+            if (error) alert("Erreur : " + error.message);
+            autre {
+                alerte("Contenu propulsé !");
+                document.getElementById('post-content').value = "";
+                document.getElementById('video-url').value = "";
+                charger les articles();
+            }
         }
+        // --- GESTION FINANCIÈRE ---
+        fonction actionFinance(type) {
+            let montant = prompt(`Entrez le montant pour le ${type} :`);
+            if (montant && !isNaN(montant)) {
+                alert(`${type} de ${montant} enregistré. En attente de validation par l'Empire.`);
+                // Ici, on pourra plus tard lier à une table "Transactions"
+            }
+        }
+        // Lancement
+        charger les articles();
     </script>
 </body>
 </html>
