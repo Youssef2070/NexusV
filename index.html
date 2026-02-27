@@ -3,92 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusV Empire - Finance et Social</title>
+    <title>NexusV Empire | Secure Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
-        corps { marge: 0; arrière-plan: #000; couleur: blanc; police: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; affichage: flex; direction-flex: colonne; alignement-éléments: centre; marge intérieure: 15px; }
+        :root { --gold: #ffd700; --gold-dark: #b8860b; --bg: #000; --card: #111; --border: #222; --text: #fff; }
+
+        body { 
+            margin: 0; background: var(--bg); color: var(--text); 
+            font-family: 'Inter', sans-serif; display: flex; flex-direction: column; 
+            align-items: center; padding: 20px; min-height: 100vh;
+        }
+
+        /* SPLASH SCREEN */
+        #splash-screen {
+            position: fixed; inset: 0; background: #000;
+            display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; z-index: 9999; transition: opacity 0.6s ease;
+        }
+        .v-loader { font-size: 80px; font-weight: 900; color: var(--gold); animation: vPulse 1.5s infinite; }
+        @keyframes vPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } }
+        .hidden { opacity: 0; pointer-events: none; }
+
+        /* UI */
+        .app-logo { font-size: 45px; font-weight: 900; color: var(--gold); margin-bottom: 20px; cursor: pointer; }
+
+        .wallet-container { 
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%); 
+            color: #000; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; 
+            text-align: center; box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2); margin-bottom: 20px;
+        }
+        .balance { font-size: 40px; font-weight: 900; margin-bottom: 20px; }
+        .btn-action { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; background: #000; color: #fff; }
+
+        .card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); width: 100%; max-width: 400px; margin-bottom: 20px; }
         
-        /* Logo */
-        .grand-v { font-size: 70px; font-weight: 900; color: #ffd700; text-shadow: 0 0 20px #ffd700; margin: 10px 0; cursor: pointer; }
-        /*Portefeuille*/
-        .wallet-card { background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%); color: black; padding: 20px; border-radius: 20px; width: 95%; max-width: 450px; text-align: center; box-shadow: 0 10px 20px rgba(255, 215, 0, 0.2); margin-bottom: 20px; }
-        .balance-label { font-size: 14px; font-weight: bold; text-transform: uppercase; opacity: 0.8; }
-        .balance-amount { font-size: 32px; font-weight: 900; margin: 5px 0; }
-        .wallet-btns { display: flex; gap: 10px; margin-top: 15px; }
-        .btn-wallet { flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; background: rgba(0,0,0,0.8); color: white; transition: 0.3s; }
-        .btn-wallet:hover { background: white; color: black; }
-        /* Formulaire et messages */
-        .card { background: #111; padding: 20px; border-radius: 15px; border: 1px solid #333; width: 95%; max-width: 450px; margin-bottom: 20px; box-sizing: border-box; }
-        h3 { couleur : #ffd700 ; marge supérieure : 0 ; alignement du texte : centré ; taille de police : 18px ; }
-        input, .btn-main { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: none; box-sizing: border-box; font-size: 16px; }
-        input { background: #222; color: white; border: 1px solid #444; }
-        .btn-main { background: #ffd700; color: black; font-weight: bold; cursor: pointer; }
-        
-        .post-display { background: #151515; padding: 15px; border-radius: 12px; margin-top: 15px; border-left: 5px solid #ffd700; width: 100%; box-sizing: border-box; }
-        .post-content { font-size: 17px; margin-bottom: 10px; line-height: 1.4; }
-        vidéo { largeur : 100 % ; bordure arrondie : 8 px ; arrière-plan : #000 ; marge supérieure : 5 px ; }
+        /* HISTORY TABLE */
+        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        .history-table th { text-align: left; color: var(--gold); padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .history-table td { padding: 10px 0; border-bottom: 1px solid #1a1a1a; }
+        .status-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .status-pending { background: #554400; color: #ffd700; }
+        .status-approved { background: #004411; color: #00ff66; }
+
+        .toast { position: fixed; bottom: 20px; background: #333; color: white; padding: 12px 25px; border-radius: 50px; z-index: 10000; }
     </style>
 </head>
-<corps>
-    <div class="grand-v" onclick="location.reload()">V</div>
-    <div class="carte-portefeuille">
-        <div class="balance-label">Mon Solde NexusV</div>
-        <div class="balance-amount" id="user-balance">0.00 FCFA</div>
-        <div class="wallet-btns">
-            <button class="btn-wallet" onclick="actionFinance('Dépôt')">+ Dépôt</button>
-            <button class="btn-wallet" onclick="actionFinance('Retrait')">- Retrait</button>
+<body>
+
+    <div id="splash-screen">
+        <div class="v-loader">V</div>
+        <p style="color: var(--gold); letter-spacing: 5px; font-size: 10px;">SECURE CONNECTION</p>
+    </div>
+
+    <div class="app-logo" onclick="location.reload()">V</div>
+
+    <div class="wallet-container">
+        <div style="font-size: 12px; font-weight: 900;">SECURE BALANCE</div>
+        <div class="balance" id="balance-display">0.00 FCFA</div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-action" onclick="requestTx('Deposit')">DEPOSIT</button>
+            <button class="btn-action" onclick="requestTx('Withdrawal')">WITHDRAW</button>
         </div>
     </div>
+
     <div class="card">
-        <h3>Nouvelle publication</h3>
-        <input type="text" id="post-content" placeholder="Que voulez-vous dire ?">
-        <input type="text" id="video-url" placeholder="Lien vidéo direct (mp4, etc.)">
-        <button class="btn-main" onclick="sendPost()">PUBLIER DANS L'EMPIRE</button>
+        <h3 style="color: var(--gold); margin: 0 0 10px 0; font-size: 16px;">Activity History</h3>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="tx-history">
+                </tbody>
+        </table>
     </div>
-    <div id="feed" style="width: 100%; max-width: 450px;"></div>
+
+    <div class="card">
+        <h3 style="color: var(--gold); margin: 0 0 10px 0; font-size: 16px;">Empire Feed</h3>
+        <input type="text" id="post-text" placeholder="Post a message..." style="width:100%; padding:10px; background:#000; border:1px solid var(--border); color:#fff; border-radius:8px;">
+        <button onclick="publish()" style="width:100%; padding:12px; background:var(--gold); border:none; border-radius:8px; font-weight:900; margin-top:10px; cursor:pointer;">PUBLISH</button>
+    </div>
+
+    <div id="feed" style="width:100%; max-width:400px;"></div>
+
     <script>
-        // Configuration Ta Supabase
-        const SB_URL = "https://drrwmuzocggrhtvshpdg.supabase.co";
-        const SB_KEY = "Sb_publishable__c1nOqAjS87Km-nWtjEkRg_UnMTWTdZ";
+        const SB_URL = "YOUR_SUPABASE_URL"; 
+        const SB_KEY = "YOUR_SUPABASE_KEY";
         const supabase = supabase.createClient(SB_URL, SB_KEY);
-        // --- GESTION SOCIALE ---
-        fonction asynchrone chargerPosts() {
-            const { data, error } = await supabase.from('Post').select('*').order('created_at', { ascending: false });
+
+        async function boot() {
+            await Promise.all([fetchPosts(), fetchHistory()]);
+            setTimeout(() => document.getElementById('splash-screen').classList.add('hidden'), 1000);
+        }
+
+        async function fetchHistory() {
+            const { data } = await supabase.from('Transactions').select('*').order('created_at', { ascending: false }).limit(5);
+            const container = document.getElementById('tx-history');
+            container.innerHTML = data ? data.map(tx => `
+                <tr>
+                    <td>${tx.type}</td>
+                    <td>${tx.amount}</td>
+                    <td><span class="status-badge ${tx.status === 'Pending' ? 'status-pending' : 'status-approved'}">${tx.status}</span></td>
+                </tr>
+            `).join('') : '<tr><td colspan="3">No transactions yet.</td></tr>';
+        }
+
+        async function fetchPosts() {
+            const { data } = await supabase.from('Post').select('*').order('created_at', { ascending: false });
             const feed = document.getElementById('feed');
-            si (données) {
-                feed.innerHTML = "";
-                data.forEach(post => {
-                    feed.innerHTML += `
-                        <div class="post-display">
-                            <div class="post-content">${post.content}</div>
-                            ${post.video_url ? `<video controls src="${post.video_url}"></video>` : ''}
-                        </div>`;
-                });
+            feed.innerHTML = data ? data.map(p => `<div style="background:#111; padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid var(--gold);">${p.content}</div>`).join('') : '';
+        }
+
+        async function publish() {
+            const content = document.getElementById('post-text').value;
+            if(!content) return;
+            await supabase.from('Post').insert([{ content }]);
+            document.getElementById('post-text').value = "";
+            fetchPosts();
+        }
+
+        async function requestTx(type) {
+            let amount = prompt(`Amount for ${type}:`);
+            if (amount && !isNaN(amount)) {
+                await supabase.from('Transactions').insert([{ type, amount: parseFloat(amount), status: 'Pending' }]);
+                alert("Request Sent!");
+                fetchHistory();
             }
         }
-        fonction asynchrone sendPost() {
-            const content = document.getElementById('post-content').value;
-            const video = document.getElementById('video-url').value;
-            if (!content) return alert("Écris un message !");
-            const { erreur } = await supabase.from('Post').insert([{ contenu, video_url: vidéo }]);
-            if (error) alert("Erreur : " + error.message);
-            autre {
-                alerte("Contenu propulsé !");
-                document.getElementById('post-content').value = "";
-                document.getElementById('video-url').value = "";
-                charger les articles();
-            }
-        }
-        // --- GESTION FINANCIÈRE ---
-        fonction actionFinance(type) {
-            let montant = prompt(`Entrez le montant pour le ${type} :`);
-            if (montant && !isNaN(montant)) {
-                alert(`${type} de ${montant} enregistré. En attente de validation par l'Empire.`);
-                // Ici, on pourra plus tard lier à une table "Transactions"
-            }
-        }
-        // Lancement
-        charger les articles();
+
+        boot();
     </script>
 </body>
 </html>
