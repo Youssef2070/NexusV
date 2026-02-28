@@ -64,4 +64,123 @@
         .status-pending { background: #443300; color: #ffd700; }
         .status-approved { background: #003311; color: #00ff66; }
 
-       
+        /* --- FEED --- */
+        .post { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); border-left: 4px solid var(--gold); margin-bottom: 10px; }
+        input { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-gold { width: 100%; padding: 14px; background: var(--gold); border: none; border-radius: 8px; font-weight: 900; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <div class="v-loader">V</div>
+        <p style="color: var(--gold); letter-spacing: 5px; font-size: 10px; font-weight: bold;">NEXUSV SECURE SYSTEM</p>
+    </div>
+
+    <div class="app-logo" onclick="location.reload()">V</div>
+
+    <div class="wallet-container">
+        <div style="font-size: 12px; font-weight: 900; letter-spacing: 1px;">SECURE BALANCE</div>
+        <div class="balance" id="balance-display">0.00 FCFA</div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-action" onclick="requestTransaction('Deposit')">DEPOSIT</button>
+            <button class="btn-action" onclick="requestTransaction('Withdrawal')">WITHDRAW</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="color: var(--gold); margin: 0 0 10px 0; font-size: 16px;">Activity History</h3>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="tx-history-list">
+                </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3 style="color: var(--gold); margin: 0 0 10px 0; font-size: 16px;">Empire Broadcast</h3>
+        <input type="text" id="post-input" placeholder="What is the news today?">
+        <button class="btn-gold" id="btn-publish" onclick="publishPost()">BROADCAST</button>
+    </div>
+
+    <div id="empire-feed" style="width:100%; max-width:400px;"></div>
+
+    <script>
+        // --- SECURITY CONFIG ---
+        const SB_URL = "YOUR_SUPABASE_URL"; 
+        const SB_KEY = "YOUR_SUPABASE_KEY";
+        const supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        // --- APP STARTUP ---
+        async function startSystem() {
+            try {
+                await Promise.all([refreshFeed(), refreshHistory()]);
+            } finally {
+                setTimeout(() => document.getElementById('splash-screen').classList.add('hidden'), 1000);
+            }
+        }
+
+        // --- SOCIAL LOGIC ---
+        async function refreshFeed() {
+            const { data } = await supabase.from('Post').select('*').order('created_at', { ascending: false });
+            const container = document.getElementById('empire-feed');
+            container.innerHTML = data ? data.map(p => `
+                <div class="post">
+                    <div style="font-size: 15px;">${p.content}</div>
+                </div>`).join('') : '';
+        }
+
+        async function publishPost() {
+            const input = document.getElementById('post-input');
+            const btn = document.getElementById('btn-publish');
+            if(!input.value.trim()) return;
+
+            btn.disabled = true;
+            await supabase.from('Post').insert([{ content: input.value.trim() }]);
+            input.value = "";
+            await refreshFeed();
+            btn.disabled = false;
+        }
+
+        // --- FINANCE LOGIC ---
+        async function refreshHistory() {
+            const { data } = await supabase.from('Transactions').select('*').order('created_at', { ascending: false }).limit(5);
+            const list = document.getElementById('tx-history-list');
+            list.innerHTML = data && data.length > 0 ? data.map(tx => `
+                <tr>
+                    <td>${tx.type}</td>
+                    <td>${tx.amount.toLocaleString()} FCFA</td>
+                    <td><span class="status-badge ${tx.status === 'Pending' ? 'status-pending' : 'status-approved'}">${tx.status}</span></td>
+                </tr>
+            `).join('') : '<tr><td colspan="3" style="text-align:center; color:#555; padding-top:10px;">No activity yet.</td></tr>';
+        }
+
+        async function requestTransaction(type) {
+            let amount = prompt(`Enter ${type} amount:`);
+            if (amount && !isNaN(amount) && amount > 0) {
+                const { error } = await supabase.from('Transactions').insert([{ 
+                    type, 
+                    amount: parseFloat(amount), 
+                    status: 'Pending' 
+                }]);
+                
+                if(!error) {
+                    alert("Request secured. Waiting for Empire validation.");
+                    refreshHistory();
+                } else {
+                    alert("Security Error: " + error.message);
+                }
+            }
+        }
+
+        // Launch
+        startSystem();
+    </script>
+</body>
+</html>
